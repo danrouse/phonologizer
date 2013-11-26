@@ -16,6 +16,11 @@ local.properties
 .settings/
 .loadpath
 another_rewrite/
+bower_components/modernizr/
+bower_components/jquery/
+bower_components/foundation/*
+!bower_components/foundation/js/
+
 
 # External tool builders
 .externalToolBuilders/
