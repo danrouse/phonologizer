@@ -1,6 +1,13 @@
 (function() {
     
     var index = {
+		geometry: {
+			laryngeal: ['spread gl', 'constr gl', 'voice'],
+			supralaryngeal: ['nasal', 'continuant', 'lateral', 'strident', 'approximant', 'place'],
+			place: ['labial', 'labiodental', 'coronal', 'dorsal', 'radical'],
+			labial: ['distributed', 'round'],
+		},
+		
         segments: {
 			'\u00E7': { 'syllabic': -1, 'stress': -1, 'long': -1, 'consonantal': 1, 'sonorant': -1, 'continuant': 1, 'delayed release': 1, 'approximant': -1, 'tap': -1, 'trill': -1, 'nasal': -1, 'voice': -1, 'spread gl': -1, 'constr gl': -1, 'labial': -1, 'round': -1, 'labiodental': -1, 'coronal': 1, 'anterior': -1, 'distributed': 1, 'strident': -1, 'lateral': -1, 'dorsal': 1, 'high': 1, 'low': -1, 'front': 1, 'back': -1, 'tense': 0 },
 			'\u0070': { 'syllabic': -1, 'stress': -1, 'long': -1, 'consonantal': 1, 'sonorant': -1, 'continuant': -1, 'delayed release': -1, 'approximant': -1, 'tap': -1, 'trill': -1, 'nasal': -1, 'voice': -1, 'spread gl': -1, 'constr gl': -1, 'labial': 1, 'round': -1, 'labiodental': -1, 'coronal': -1, 'anterior': 0, 'distributed': 0, 'strident': 0, 'lateral': -1, 'dorsal': -1, 'high': 0, 'low': 0, 'front': 0, 'back': 0, 'tense': 0 },
@@ -160,7 +167,10 @@
             lo: 'low',
             ft: 'front',
             bk: 'back',
-            tns: 'tense', ten: 'tense'
+            tns: 'tense', ten: 'tense',
+			
+			lar: 'laryngeal',
+			supralar: 'supralaryngeal', suplar: 'supralaryngeal',
         },
         
         implications: [
@@ -491,9 +501,9 @@
         }
         new_table.push('<tr>' + cur_row.join('') + '</tr>');
         
-        $('.content_area').html('<h3>Rules</h3><table class="rules">' + new_table.join('') + '</table>');
+        $('.rules_container').html('<h3>Rules</h3><table class="rules">' + new_table.join('') + '</table>');
 		
-        $('.content_area .ipa').ipa_ime();
+        $('.rules_container .ipa').ipa_ime();
     }
     
     $('.content_area').bind('change', '.rules input', function(event) {
@@ -555,25 +565,36 @@
 		draw_selection(event.target.value);
 	});
 	
-	function draw_feature_list() {
-		var features = [];
-		for(var i in index.segments) {
-			for(var feature in index.segments[i]) {
+	function draw_feature_chart() {
+		var header = [],
+			features = [],
+			rows = [];
+		
+		for(var segment in index.segments) {
+			for(var feature in index.segments[segment]) {
 				if(features.indexOf(feature) == -1) {
 					features.push(feature);
 				}
 			}
+			header.push(segment);
 		}
-		$('.feature_list').html('<h3>Features</h3><ul><li>' + features.join('</li><li>') + '</li></ul>');
-	}
-	
-	function draw_feature_chart() {
-		$('.content_area').html('<h3>Features and Segments</h3>');
+		rows.push('<th /><th>' + header.join('</th><th>') + '</th>');
+		
+		for(var i in features) {
+			var row = '<td class="feature">' + features[i] + '</td>';
+			for(var segment in index.segments) {
+				//console.log(segment, features[i], index.segments[segment][features[i]], (!index.segments[segment][features[i]] ? 0 : index.segments[segment][i] == -1 ? '-' : '+'));
+				row += '<td class="feature_value">' + (!index.segments[segment][features[i]] ? 0 : index.segments[segment][features[i]] == -1 ? '-' : '+') + '</td>';
+			}
+			rows.push(row);
+		}
+		
+		$('.features_container').html('<h3>Features and Segments</h3><table><tr>' + rows.join('</tr><tr>') + '</tr></table>');
 	}
 	
 	function draw_selection(selection_data) {
 		//console.log(selection_data, 'selected');
-		$('.selection_area').html(selection_data);
+		$('.selection_container').html(selection_data);
 	}
 	
 	// prevent default document scrolling
@@ -586,24 +607,20 @@
 	document.addEventListener("touchstart", function () {}, false);
 	
 	// expand app tab elements
-	$('.expand_button').bind('click', function(e) {
-		if($(this).hasClass('expanded')) {
-			// collapse and show rules
-			draw_rules_table();
-			$(this).removeClass('expanded')
-				.html('<a>show segments</a>')
-				.after($('.content_area'));
-			$('.feature_list').get(0).style.removeProperty('display');
-			$('.content_area').removeClass('large-12 chart_container').addClass('large-10');
+	$('.container_toggler').bind('click', function(e) {
+		if($('.features_container').hasClass('collapsed')) {
+			// show features
+			$('.features_container').removeClass('collapsed show-for-large-up large-2').addClass('small-14 large-12');
+			$('.rules_container').removeClass('small-14 large-10').addClass('collapsed');
+			$(this).html('<span>Show Rules</span>');
 		} else {
-			// expand and show feature chart
-			draw_feature_chart();
-			$(this).addClass('expanded')
-				.html('<a>show rules</a>')
-				.before($('.content_area'));
-			$('.feature_list').get(0).style.setProperty('display', 'none', 'important');
-			$('.content_area').removeClass('large-10').addClass('large-12 chart_container');
+			// show rules
+			$('.features_container').removeClass('small-14 large-12').addClass('collapsed show-for-large-up large-2');
+			$('.rules_container').removeClass('collapsed').addClass('small-14 large-10');
+			$(this).html('<span>Show Feature Chart</span>');
 		}
+		
+		$(this).blur();
 	});
     
     //data.push('tɛst');
@@ -618,6 +635,6 @@
     rules.push(empty);
     
     draw_rules_table();
-	draw_feature_list();
+	draw_feature_chart();
     
 })();
