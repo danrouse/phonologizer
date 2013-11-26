@@ -1,25 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>Phonology Web App</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://fonts.googleapis.com/css?family=Gentium+Basic:400,700,400italic,700italic" rel="stylesheet" type="text/css">
-    <link href="style.css" rel="stylesheet" media="screen">
-	<script lang="javascript" src="bower_components/foundation/js/vendor/custom.modernizr.js"></script>
-  </head>
-  <body>
-    <section>
-        <table class="rules">
-        </table>
-    </section>
-    
-	<script lang="javascript" src="bower_components/foundation/js/vendor/jquery.js"></script>
-    <script lang="javascript" src="bower_components/foundation/js/foundation.min.js"></script>
-    <script lang="javascript" src="ipa_ime.js"></script>
-    <script lang="javascript" src="app.js"></script>
-    <script>
-        $('.ipa').ipa_ime();
-    </script>
+	<head>
+		<title>Phonology Web App</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<link href="https://fonts.googleapis.com/css?family=Gentium+Basic:400,700,400italic,700italic" rel="stylesheet" type="text/css">
+		<link href="style.css" rel="stylesheet" media="screen">
+		<script lang="javascript" src="bower_components/foundation/js/vendor/custom.modernizr.js"></script>
+	</head>
+	<body>
+		<div class="row wrapper">
+			<div class="show-for-large-up large-2 columns feature_list">
+			</div>
+			<div class="small-2 large-1 columns expand_button">
+				<a>show segments</a>
+			</div>
+			<div class="small-14 large-10 columns content_area">
+			</div>
+			<div class="show-for-large-up large-3 columns selection_area">
+				selection
+			</div>
+			
+			<!--
+			
+			<div class="panel small-1 large-2 columns">
+				<div class="show-for-large-up small-0 large-9 columns">
+					one
+				</div>
+				<div class="small-12 large-3 columns expand_button collapsed">
+					<a>expand chart</a>
+				</div>
+			</div>
+			<div class="panel small-10 large-8 columns">
+				<table class="rules">
+				</table>
+			</div>
+			<div class="panel small-1 large-2 columns">
+				<div class="hide-for-large-up small-12 columns expand_button">
+					<a>expand classes</a>
+				</div>
+				<div class="show-for-large-up large-12 columns collapsed">
+					three
+				</div>
+			</div>
+-->
+		</div>
+		<script lang="javascript" src="bower_components/foundation/js/vendor/jquery.js"></script>
+		<script lang="javascript" src="bower_components/foundation/js/foundation.min.js"></script>
+		<script lang="javascript" src="ipa_ime.js"></script>
+		<script lang="javascript" src="app.js"></script>
+		<script>
+			$(document).foundation();
+			$('.ipa').ipa_ime();
+		</script>
   </body>
 </html>

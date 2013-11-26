@@ -277,13 +277,11 @@
         for(var segment in index.segments) {
             var comp = compare_features(features, index.segments[segment], true);
             if(!comp.diff.length) {
-				console.log('match', segment, index.segments[segment], features, comp);
 				return segment;
 			} else if(comp.diff.length === 1) {
 				for(var diac in index.diacritics) {
 					var diac_applied = combine_features(index.segments[segment], index.diacritics[diac][0]),
 						diac_comp = compare_features(features, diac_applied, true);
-					console.log('diac', segment, index.diacritics[diac][2], diac_comp, features, diac_applied, index.diacritics[diac][0]);
 					if(!diac_comp.diff.length) {
 						return segment + diac;
 					}
@@ -427,7 +425,7 @@
             for(var i in input) {
                 var str = features_to_string(input[i]);
                 if(str.length > 1) {
-                    console.log('failed to convert to string', input[i]);
+                    //console.log('failed to convert to string', input[i]);
                 }
                 input[i] = features_to_string(input[i]);
             }
@@ -435,10 +433,12 @@
             return input.join('');
         };
     }
+	
+	/*
+		UI ELEMENTS
+	*/
     
-    var data = [], rules = [],
-    data_proto = $('.data.proto').clone(),
-    rule_proto = $('.rule.proto').clone();
+    var data = [], rules = [];
 
     function draw_rules_table() {
         var new_table = [],
@@ -491,11 +491,12 @@
         }
         new_table.push('<tr>' + cur_row.join('') + '</tr>');
         
-        $('.rules').html('<table>' + new_table.join('') + '</table>');
-        $('.rules .ipa').ipa_ime();
+        $('.content_area').html('<h3>Rules</h3><table class="rules">' + new_table.join('') + '</table>');
+		
+        $('.content_area .ipa').ipa_ime();
     }
     
-    $('.rules').bind('change', 'input', function(event) {
+    $('.content_area').bind('change', '.rules input', function(event) {
         var target = $(event.target),
             i = target.parent().data('i'),
             val = target.val(),
@@ -532,25 +533,78 @@
         }
         
         if(redraw) {
+			draw_selection(val);
             draw_rules_table();
         }
         //console.log(target.parent().data('i'), target.attr('class'));
-    });
-    $('.rules').bind('click', 'button', function(event) {
-        if(event.target.nodeName == 'BUTTON') {
-            var action = $(event.target).data('action'),
-                i = $(event.target).data('i'),
-                sel_rule = rules[i];
-            if(action == 'rule_up') { 
-                rules[i] = rules[i-1];
-                rules[i-1] = sel_rule;
-            } else if(action == 'rule_down') {
-                rules[i] = rules[i+1];
-                rules[i+1] = sel_rule;
-            }
-            draw_rules_table();
-        }
-    });
+    }).bind('click', '.rules button', function(event) {
+		if(event.target.nodeName == 'BUTTON') {
+			var action = $(event.target).data('action'),
+				i = $(event.target).data('i'),
+				sel_rule = rules[i];
+			if(action == 'rule_up') { 
+				rules[i] = rules[i-1];
+				rules[i-1] = sel_rule;
+			} else if(action == 'rule_down') {
+				rules[i] = rules[i+1];
+				rules[i+1] = sel_rule;
+			}
+			draw_rules_table();
+		}
+	}).bind('focusin focusout', '.rules input', function(event) {
+		draw_selection(event.target.value);
+	});
+	
+	function draw_feature_list() {
+		var features = [];
+		for(var i in index.segments) {
+			for(var feature in index.segments[i]) {
+				if(features.indexOf(feature) == -1) {
+					features.push(feature);
+				}
+			}
+		}
+		$('.feature_list').html('<h3>Features</h3><ul><li>' + features.join('</li><li>') + '</li></ul>');
+	}
+	
+	function draw_feature_chart() {
+		$('.content_area').html('<h3>Features and Segments</h3>');
+	}
+	
+	function draw_selection(selection_data) {
+		//console.log(selection_data, 'selected');
+		$('.selection_area').html(selection_data);
+	}
+	
+	// prevent default document scrolling
+	document.addEventListener('touchmove', function (e) {
+			if (e.target.type === 'range') { return; }
+			e.preventDefault();
+	}, false);
+
+	// enable CSS active pseudo styles
+	document.addEventListener("touchstart", function () {}, false);
+	
+	// expand app tab elements
+	$('.expand_button').bind('click', function(e) {
+		if($(this).hasClass('expanded')) {
+			// collapse and show rules
+			draw_rules_table();
+			$(this).removeClass('expanded')
+				.html('<a>show segments</a>')
+				.after($('.content_area'));
+			$('.feature_list').get(0).style.removeProperty('display');
+			$('.content_area').removeClass('large-12 chart_container').addClass('large-10');
+		} else {
+			// expand and show feature chart
+			draw_feature_chart();
+			$(this).addClass('expanded')
+				.html('<a>show rules</a>')
+				.before($('.content_area'));
+			$('.feature_list').get(0).style.setProperty('display', 'none', 'important');
+			$('.content_area').removeClass('large-10').addClass('large-12 chart_container');
+		}
+	});
     
     //data.push('tɛst');
     data.push('bitiɑso');
@@ -564,5 +618,6 @@
     rules.push(empty);
     
     draw_rules_table();
+	draw_feature_list();
     
 })();
