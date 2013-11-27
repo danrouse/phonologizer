@@ -506,7 +506,7 @@
         $('.rules_container .ipa').ipa_ime();
     }
     
-    $('.content_area').bind('change', '.rules input', function(event) {
+    $('.rules_container').bind('change', 'input', function(event) {
         var target = $(event.target),
             i = target.parent().data('i'),
             val = target.val(),
@@ -547,7 +547,7 @@
             draw_rules_table();
         }
         //console.log(target.parent().data('i'), target.attr('class'));
-    }).bind('click', '.rules button', function(event) {
+    }).bind('click', 'button', function(event) {
 		if(event.target.nodeName == 'BUTTON') {
 			var action = $(event.target).data('action'),
 				i = $(event.target).data('i'),
@@ -561,7 +561,7 @@
 			}
 			draw_rules_table();
 		}
-	}).bind('focusin focusout', '.rules input', function(event) {
+	}).bind('focusin focusout', 'input', function(event) {
 		draw_selection(event.target.value);
 	});
 	
@@ -592,6 +592,10 @@
 		$('.features_container').html('<h3>Features and Segments</h3><table><tr>' + rows.join('</tr><tr>') + '</tr></table>');
 	}
 	
+	$('.features_container').bind('mouseenter', 'td, th', function(event) {
+		console.log('mouseenter targetval', event.target.value);
+	});
+	
 	function draw_selection(selection_data) {
 		//console.log(selection_data, 'selected');
 		$('.selection_container').html(selection_data);
@@ -610,13 +614,14 @@
 	$('.container_toggler').bind('click', function(e) {
 		if($('.features_container').hasClass('collapsed')) {
 			// show features
-			$('.features_container').removeClass('collapsed show-for-large-up large-2').addClass('small-14 large-12');
-			$('.rules_container').removeClass('small-14 large-10').addClass('collapsed');
+			$('.features_container').removeClass('collapsed');
+			$('.rules_container').addClass('collapsed');
 			$(this).html('<span>Show Rules</span>');
 		} else {
+			
 			// show rules
-			$('.features_container').removeClass('small-14 large-12').addClass('collapsed show-for-large-up large-2');
-			$('.rules_container').removeClass('collapsed').addClass('small-14 large-10');
+			$('.features_container').addClass('collapsed').get(0).scrollLeft = 0;
+			$('.rules_container').removeClass('collapsed');
 			$(this).html('<span>Show Feature Chart</span>');
 		}
 		

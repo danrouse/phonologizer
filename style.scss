@@ -39,6 +39,7 @@ html, body {
 	span {
 		display: inline-block;
 		transform: rotate(90deg);
+		margin: 0 -3em;
 	}
 	color: $secondary-color;
 	transition: all .25s ease-out;
@@ -47,7 +48,14 @@ html, body {
 .features_container {
 	background-color: lighten($primary-color, 60%);
 	transition: all .5s ease-out;
+	
+	@extend .columns;
+	@extend .small-14;
+	@extend .large-12;
+	
 	&.collapsed {
+		@extend .show-for-large-up;
+		@extend .large-2;
 		overflow-x: hidden;
 	}
 	h3 {
@@ -83,6 +91,8 @@ html, body {
 	transition: all .5s ease-out;
 	overflow: auto;
 	
+	@extend .small-14;
+	@extend .large-10;
 	&.collapsed {
 		width: 0;
 		padding: 0;

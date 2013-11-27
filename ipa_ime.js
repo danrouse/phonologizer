@@ -213,6 +213,8 @@
                     }
                     
                     ime_suggest.hide();
+					
+					ime_input.trigger('change');
                     return true;
                 }
                 
