@@ -1,4 +1,4 @@
-(function() {
+(function($) {
     
     var index = {
 		geometry: {
@@ -283,20 +283,37 @@
 		return output.join(', ');
     }
 	
-	function features_to_segment(features) {
+	function features_to_segment(features, return_multiple_elements) {
+        var matches = [], ratings = [];
+        
         for(var segment in index.segments) {
             var comp = compare_features(features, index.segments[segment], true);
             if(!comp.diff.length) {
-				return segment;
+				matches.push(segment);
+                ratings.push(0);
 			} else if(comp.diff.length === 1) {
 				for(var diac in index.diacritics) {
 					var diac_applied = combine_features(index.segments[segment], index.diacritics[diac][0]),
 						diac_comp = compare_features(features, diac_applied, true);
 					if(!diac_comp.diff.length) {
-						return segment + diac;
+						matches.push(segment + diac);
+                        ratings.push(1);
 					}
 				}
 			}
+        }
+        
+        if(return_multiple_elements) {
+            return matches;
+        } else {
+            var lowest_rating, match;
+            for(var i in matches) {
+                if(typeof lowest_rating == 'undefined' || ratings[i] < lowest_rating) {
+                    match = matches[i];
+                    lowest_rating = ratings[i];
+                }
+            }
+            return match;
         }
 	}
     
@@ -448,9 +465,17 @@
 		UI ELEMENTS
 	*/
     
-    var data = [], rules = [];
+    var elems = {
+            rules_container: $('.rules_container'),
+            features_segments_container: $('.features_segments_container'),
+            features_container: $('.features_container'),
+            segments_container: $('.segments_container')
+        },
+        data = [], rules = [];
 
     function draw_rules_table() {
+        console.log('drawing rules');
+        
         var new_table = [],
             cur_row = [];
         // header row
@@ -501,12 +526,12 @@
         }
         new_table.push('<tr>' + cur_row.join('') + '</tr>');
         
-        $('.rules_container').html('<h3>Rules</h3><table class="rules">' + new_table.join('') + '</table>');
+        elems.rules_container.html('<h3>Rules</h3><table class="rules">' + new_table.join('') + '</table>');
 		
         $('.rules_container .ipa').ipa_ime();
     }
     
-    $('.rules_container').bind('change', 'input', function(event) {
+    elems.rules_container.bind('change', 'input', function(event) {
         var target = $(event.target),
             i = target.parent().data('i'),
             val = target.val(),
@@ -543,10 +568,9 @@
         }
         
         if(redraw) {
-			draw_selection(val);
+			set_selection(val);
             draw_rules_table();
         }
-        //console.log(target.parent().data('i'), target.attr('class'));
     }).bind('click', 'button', function(event) {
 		if(event.target.nodeName == 'BUTTON') {
 			var action = $(event.target).data('action'),
@@ -562,10 +586,29 @@
 			draw_rules_table();
 		}
 	}).bind('focusin focusout', 'input', function(event) {
-		draw_selection(event.target.value);
+		set_selection(event.target.value);
 	});
 	
-	function draw_feature_chart() {
+    function draw_feature_list() {
+		var features = [],
+            rows = ['<td />'];
+        
+        for(var segment in index.segments) {
+			for(var feature in index.segments[segment]) {
+				if(features.indexOf(feature) == -1) {
+					features.push(feature);
+				}
+			}
+		}
+        
+		for(var i in features) {
+			rows.push('<td data-type="feature">' + features[i] + '</td>');
+		}
+		
+		elems.features_container.html('<h3>Features</h3><table><tr>' + rows.join('</tr><tr>') + '</tr></table>');
+    }
+    
+	function draw_segment_chart() {
 		var header = [],
 			features = [],
 			rows = [];
@@ -578,60 +621,86 @@
 			}
 			header.push(segment);
 		}
-		rows.push('<th /><th>' + header.join('</th><th>') + '</th>');
+		rows.push('<th data-type="segment">' + header.join('</th><th data-type="segment">') + '</th>');
 		
 		for(var i in features) {
-			var row = '<td class="feature">' + features[i] + '</td>';
+			var row = '';
 			for(var segment in index.segments) {
 				//console.log(segment, features[i], index.segments[segment][features[i]], (!index.segments[segment][features[i]] ? 0 : index.segments[segment][i] == -1 ? '-' : '+'));
-				row += '<td class="feature_value">' + (!index.segments[segment][features[i]] ? 0 : index.segments[segment][features[i]] == -1 ? '-' : '+') + '</td>';
+				row += '<td data-type="value" data-feature="' + features[i] + '" data-segment="' + segment + '">' + (!index.segments[segment][features[i]] ? 0 : index.segments[segment][features[i]] == -1 ? '-' : '+') + '</td>';
 			}
 			rows.push(row);
 		}
 		
-		$('.features_container').html('<h3>Features and Segments</h3><table><tr>' + rows.join('</tr><tr>') + '</tr></table>');
+		elems.segments_container.html('<h3>Segments</h3><table><tr>' + rows.join('</tr><tr>') + '</tr></table>');
 	}
 	
-	$('.features_container').bind('mouseenter', 'td, th', function(event) {
-		console.log('mouseenter targetval', event.target.value);
+	elems.features_segments_container.bind('click', function(event) {
+        var target = $(event.target);
+        if(!target.is('td, th')) { return; }
+        
+        var elem_type = target.data('type');
+        if(elem_type == 'feature') {
+            var feature = target.data('feature'),
+                bundle_a = {}, bundle_b = {};
+            
+            // select + and - the selected feature
+            bundle_a[feature] = 1;
+            bundle_b[feature] = -1;
+            set_selection(bundle_a, bundle_b);
+            
+            // highlight the row
+            $('.highlighted_row').removeClass('highlighted_row');
+            target.parent('tr').addClass('highlighted_row');
+            
+        } else if(elem_type == 'segment') {
+            set_selection(target.data('segment'));
+        } else if(elem_type == 'value') {
+            var feature = target.data('feature'),
+                segment = target.data('segment'),
+                value = event.target.innerHTML;
+            set_selection([segment, string_to_features(value + feature)]);
+        }
 	});
 	
-	function draw_selection(selection_data) {
-		//console.log(selection_data, 'selected');
-		$('.selection_container').html(selection_data);
+	function set_selection(selection) {
+        if(typeof selection == 'string' || typeof selection[0] == 'undefined') {
+            selection = [selection];
+        }
+        
+        var html = [];
+        
+        for(var item in selection) {
+            if(index.segments[item]) {
+                // segment selected
+                html.push('<h3>Segment: ' + item + '</h3>');
+                
+                var features = features_to_string(index.segments[item], true);
+                html.push(features);
+            } else {
+                // query the feature bundle
+            }
+        }
+        
+        html.push('<h3>Classes</h3>');
+        html.push(selection);
+        $('.selection_container').html(html.join(''));
 	}
 	
 	// prevent default document scrolling
 	document.addEventListener('touchmove', function (e) {
-			if (e.target.type === 'range') { return; }
-			e.preventDefault();
+        if (e.target.type === 'range') { return; }
+        e.preventDefault();
 	}, false);
 
 	// enable CSS active pseudo styles
 	document.addEventListener("touchstart", function () {}, false);
-	
-	// expand app tab elements
-	$('.container_toggler').bind('click', function(e) {
-		if($('.features_container').hasClass('collapsed')) {
-			// show features
-			$('.features_container').removeClass('collapsed');
-			$('.rules_container').addClass('collapsed');
-			$(this).html('<span>Show Rules</span>');
-		} else {
-			
-			// show rules
-			$('.features_container').addClass('collapsed').get(0).scrollLeft = 0;
-			$('.rules_container').removeClass('collapsed');
-			$(this).html('<span>Show Feature Chart</span>');
-		}
-		
-		$(this).blur();
-	});
     
     //data.push('tɛst');
-    data.push('bitiɑso');
-    data.push('bɑtiɑso');
-    data.push('');
+    data.push('pɛt');
+    data.push('bɛt');
+    data.push('fɛt');
+    data.push('fɹɛt');
     var foo = new Rule('V', '[-v]', '_', 'devoice vowels');
     var dv = new Rule('C', '[+voiced]', 'V_V', 'Intervocalic voicing');
     var empty = new Rule();
@@ -640,6 +709,7 @@
     rules.push(empty);
     
     draw_rules_table();
-	draw_feature_chart();
+	draw_feature_list();
+    draw_segment_chart();
     
-})();
+})(jQuery);

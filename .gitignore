@@ -20,6 +20,7 @@ bower_components/modernizr/
 bower_components/jquery/
 bower_components/foundation/*
 !bower_components/foundation/js/
+mongoose-tiny-4.1.exe
 
 
 # External tool builders

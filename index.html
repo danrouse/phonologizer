@@ -9,25 +9,65 @@
 		<script lang="javascript" src="bower_components/foundation/js/vendor/custom.modernizr.js"></script>
 	</head>
 	<body>
-		<div class="row wrapper">
-			<div class="features_container collapsed">
-				<h3>Features and Segments</h3>
-			</div>
-			<button class="small-2 large-1 columns container_toggler"><span>Show Feature Chart</span></button>
-			<div class="small-14 large-10 columns rules_container">
-				<h3>Rules</h3>
-			</div>
-			<div class="show-for-large-up large-3 columns selection_container">
-				<h3>Classes</h3>
-			</div>
-		</div>
+        <div class="features_segments_container collapsed">
+            <div class="features_container">
+                <h3>Features</h3>
+            </div>
+            <div class="segments_container">
+                <h3>Segments</h3>
+            </div>
+        </div>
+        <div class="container_toggler"><a>Toggle</a></div>
+        <div class="rules_container"><h3>Rules</h3></div>
+        <div class="selection_container"><h3>Selection</h3></div>
+        
 		<script lang="javascript" src="bower_components/foundation/js/vendor/jquery.js"></script>
 		<script lang="javascript" src="bower_components/foundation/js/foundation.min.js"></script>
 		<script lang="javascript" src="ipa_ime.js"></script>
 		<script lang="javascript" src="app.js"></script>
 		<script>
 			$(document).foundation();
-			$('.ipa').ipa_ime();
+            
+            $('.container_toggler').click(function() {
+                $('.features_segments_container').toggleClass('collapsed');
+                $('.rules_container').toggleClass('collapsed');
+                $('.container_toggler').toggleClass('right_side');
+            });
+            $('.features_segments_container > div').bind('scroll', function() {
+                var self = $(this),
+                    top = self.scrollTop(),
+                    left = self.scrollLeft(),
+                    sibling = self.siblings(),
+                    siblingTop = sibling.scrollTop();
+                
+                if(top !== siblingTop) {
+                    console.log(top, 'not', siblingTop);
+                    sibling.scrollTop(top);
+                }
+                
+                if(self.hasClass('segments_container')) {
+                    var header = self.find('tr:first-child'),
+                        is_sticky = header.get(0).classList.contains('sticky');
+                    
+                    if(top !== $('.features_container').scrollTop()) {
+                        $('.features_container').scrollTop(top);
+                        console.log('scrolling to top B', top);
+                    }
+                    
+                    if(top > header.offset().top + header.height()) {
+                        if(!is_sticky) {
+                            header.addClass('sticky');
+                            header.parents('table').css('margin-top', header.height() + 8);
+                        }
+                        if(left) {
+                            header.css('margin-left', -1*left);
+                        }
+                    } else if(is_sticky) {
+                        header.removeClass('sticky');
+                        header.parents('table').css('margin-top', 0);
+                    }
+                }
+            });
 		</script>
   </body>
 </html>
