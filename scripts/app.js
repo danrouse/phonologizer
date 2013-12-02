@@ -1,3 +1,5 @@
+//@prepros-prepend ipa_ime.js
+
 (function($) {
     
     var index = {
@@ -235,7 +237,7 @@
                     output.push(matches[i]);
                 }
             } else {
-                var features = [],
+                var features = {},
                     feature_list = matches[i].slice(1,-1).split(',');
                 for(var j in feature_list) {
                     var val_matches = feature_list[j].trim().match(/^(\+|\-|0)?\s?(.+)/);
@@ -277,7 +279,7 @@
 			for(var feature in features[i]) {
 				temp.push((features[i][feature] === 1 ? '+' : features[i][feature] == -1 ? '-' : '0') + feature);
 			}
-			output.push('[' + temp.join(', ') + ']');
+			output.push('<ul class="features"><li>' + temp.join(',</li><li>') + '</ul>');
 		}
 		
 		return output.join(', ');
@@ -474,8 +476,6 @@
         data = [], rules = [];
 
     function draw_rules_table() {
-        console.log('drawing rules');
-        
         var new_table = [],
             cur_row = [];
         // header row
@@ -492,15 +492,15 @@
             cur_row = [];
             var buttons = '';
             if(i != 0) {
-                buttons += '<button data-action="rule_up" data-i="' + i + '">up</button>';
+                buttons += '<li><button data-action="rule_up" data-i="' + i + '">up</button></li>';
             }
             if(i != rules.length - 1) {
-                buttons += '<button data-action="rule_down" data-i="' + i + '">down</button>';
+                buttons += '<li><button data-action="rule_down" data-i="' + i + '">down</button></li>';
             }
-            cur_row.push('<td class="rule" data-i="' + i + '">' + buttons + '\
+            cur_row.push('<td class="rule" data-i="' + i + '"><ul class="rule_move_buttons">' + buttons + '</ul>\
                 <input class="rule_name ipa" type="text" value="' + rules[i].name + '" placeholder="new rule">\
                 <input class="rule_target ipa" type="text" value="' + rules[i].target + '" placeholder="target"><span class="arrow">&rarr;</span><input class="rule_transform ipa" type="text" value="' + rules[i].transform + '" placeholder="transform">\
-                <hr>\
+                \
                 <input class="rule_environment ipa" type="text" value="' + rules[i].environment + '" placeholder="environment">\
             </td>');
             
@@ -528,14 +528,15 @@
         
         elems.rules_container.html('<h3>Rules</h3><table class="rules">' + new_table.join('') + '</table>');
 		
-        $('.rules_container .ipa').ipa_ime();
+        //$('.rules_container .ipa').ipa_ime();
     }
     
     elems.rules_container.bind('change', 'input', function(event) {
         var target = $(event.target),
             i = target.parent().data('i'),
             val = target.val(),
-            redraw = false;
+            redraw = false,
+            select = false;
         
         if(target.hasClass('datum')) {
             if(data[i] != val) {
@@ -551,27 +552,33 @@
         } else {
             if(target.hasClass('rule_name') && rules[i].name != val) {
                 rules[i].name = val;
+                select = false;
                 redraw = true;
             } else if(target.hasClass('rule_target') && rules[i].target != val) {
                 rules[i].target = val;
+                select = true;
                 redraw = true;
             } else if(target.hasClass('rule_transform') && rules[i].transform != val) {
                 rules[i].transform = val;
+                select = true;
                 redraw = true;
             } else if(target.hasClass('rule_environment') && rules[i].environment != val) {
                 rules[i].environment = val;
+                select = false;
                 redraw = true;
             }
             if(redraw && i === rules.length - 1) {
                 rules.push(new Rule());
             }
         }
-        
+        if(select) {
+            set_selection(string_to_features(val)[0]);
+        }
         if(redraw) {
-			set_selection(val);
             draw_rules_table();
         }
-    }).bind('click', 'button', function(event) {
+    })
+    .bind('click', 'button', function(event) {
 		if(event.target.nodeName == 'BUTTON') {
 			var action = $(event.target).data('action'),
 				i = $(event.target).data('i'),
@@ -585,8 +592,16 @@
 			}
 			draw_rules_table();
 		}
-	}).bind('focusin focusout', 'input', function(event) {
-		set_selection(event.target.value);
+	})
+    .bind('focusin focusout', 'input', function(event) {
+        if($(event.target).is('.rule_target, .rule_transform')) {
+            var val = event.target.value;
+            if(val.length === 1) {
+                set_selection(val);
+            } else {
+                set_selection(string_to_features(event.target.value)[0]);
+            }
+        }
 	});
 	
     function draw_feature_list() {
@@ -641,25 +656,20 @@
         
         var elem_type = target.data('type');
         if(elem_type == 'feature') {
-            var feature = target.data('feature'),
+            var feature = event.target.innerHTML,
                 bundle_a = {}, bundle_b = {};
             
             // select + and - the selected feature
             bundle_a[feature] = 1;
             bundle_b[feature] = -1;
-            set_selection(bundle_a, bundle_b);
-            
-            // highlight the row
-            $('.highlighted_row').removeClass('highlighted_row');
-            target.parent('tr').addClass('highlighted_row');
-            
+            set_selection([bundle_a, bundle_b]);            
         } else if(elem_type == 'segment') {
-            set_selection(target.data('segment'));
+            set_selection(event.target.innerHTML);
         } else if(elem_type == 'value') {
             var feature = target.data('feature'),
                 segment = target.data('segment'),
                 value = event.target.innerHTML;
-            set_selection([segment, string_to_features(value + feature)]);
+            set_selection([string_to_features('['+value + feature+']')[0], segment]);
         }
 	});
 	
@@ -671,42 +681,45 @@
         var html = [];
         
         for(var item in selection) {
-            if(index.segments[item]) {
+            //console.log('sel it', selection, item, selection[item]);
+            if(index.segments[selection[item]]) {
                 // segment selected
-                html.push('<h3>Segment: ' + item + '</h3>');
+                html.push('<h3>Segment: ' + selection[item] + '</h3>');
                 
-                var features = features_to_string(index.segments[item], true);
+                var features = features_to_string(index.segments[selection[item]], true);
                 html.push(features);
             } else {
                 // query the feature bundle
+                var matched_segments = [];
+                for(var segment in index.segments) {
+                    var comp = compare_features(selection[item], index.segments[segment]);
+                    if(comp.diff.length === 0) {
+                        matched_segments.push(segment);
+                    }
+                }
+                html.push('<h3>' + features_to_string(selection[item], true) + '</h3>');
+                if(matched_segments.length) {
+                    html.push('<ul class="segments"><li>' + matched_segments.join('</li><li>') + '</li></ul>');
+                } else {
+                    html.push('<p>No segments found</p>');
+                }
             }
         }
         
-        html.push('<h3>Classes</h3>');
-        html.push(selection);
         $('.selection_container').html(html.join(''));
 	}
-	
-	// prevent default document scrolling
-	document.addEventListener('touchmove', function (e) {
-        if (e.target.type === 'range') { return; }
-        e.preventDefault();
-	}, false);
-
-	// enable CSS active pseudo styles
-	document.addEventListener("touchstart", function () {}, false);
     
-    //data.push('tɛst');
+    // Default data and rules
     data.push('pɛt');
-    data.push('bɛt');
-    data.push('fɛt');
-    data.push('fɹɛt');
-    var foo = new Rule('V', '[-v]', '_', 'devoice vowels');
-    var dv = new Rule('C', '[+voiced]', 'V_V', 'Intervocalic voicing');
-    var empty = new Rule();
-    rules.push(foo);
-    rules.push(dv);
-    rules.push(empty);
+    data.push('bɛd');
+    data.push('fɛl');
+    data.push('bɹɛd');
+    data.push('');
+    rules.push(new Rule('t', 'ʔ', '_#', 't glottalization'));
+    rules.push(new Rule('[-cont]', '[-v]', '_#', 'final obstruent devoicing'));
+    rules.push(new Rule('l', '[+dorsal, +high, -low, -front, +back]', '_#', 'L-velarization'));
+    rules.push(new Rule('[+syl,-hi,-lo]', '[+high]', '_', 'mid vowel raising'));
+    rules.push(new Rule());
     
     draw_rules_table();
 	draw_feature_list();

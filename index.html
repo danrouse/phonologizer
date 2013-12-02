@@ -1,71 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<title>Phonology Web App</title>
+		<title>Linear Phonology Web App</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<link href="https://fonts.googleapis.com/css?family=Gentium+Basic:400,700,400italic,700italic" rel="stylesheet" type="text/css">
 		<link href="style.css" rel="stylesheet" media="screen">
-		<script lang="javascript" src="bower_components/foundation/js/vendor/custom.modernizr.js"></script>
+		<!--script lang="javascript" src="bower_components/foundation/js/vendor/custom.modernizr.js"></script-->
 	</head>
 	<body>
         <div class="features_segments_container collapsed">
-            <div class="features_container">
-                <h3>Features</h3>
-            </div>
-            <div class="segments_container">
-                <h3>Segments</h3>
-            </div>
+            <div class="features_container"><h3>Features</h3></div>
+            <div class="segments_container"></div>
         </div>
-        <div class="container_toggler"><a>Toggle</a></div>
-        <div class="rules_container"><h3>Rules</h3></div>
-        <div class="selection_container"><h3>Selection</h3></div>
+        <div class="container_toggler"></div>
+        <div class="rules_container"><h3>Rules</h3><p>Loading...</p></div>
+        <div class="selection_container"></div>
         
 		<script lang="javascript" src="bower_components/foundation/js/vendor/jquery.js"></script>
-		<script lang="javascript" src="bower_components/foundation/js/foundation.min.js"></script>
-		<script lang="javascript" src="ipa_ime.js"></script>
-		<script lang="javascript" src="app.js"></script>
+		<script lang="javascript" src="scripts/min/app.min.js"></script>
 		<script>
-			$(document).foundation();
-            
             $('.container_toggler').click(function() {
                 $('.features_segments_container').toggleClass('collapsed');
                 $('.rules_container').toggleClass('collapsed');
                 $('.container_toggler').toggleClass('right_side');
             });
-            $('.features_segments_container > div').bind('scroll', function() {
-                var self = $(this),
-                    top = self.scrollTop(),
-                    left = self.scrollLeft(),
-                    sibling = self.siblings(),
-                    siblingTop = sibling.scrollTop();
+            
+            // cache DOM elements
+            var elems = {};
+            ['features_segments_container',
+             'features_container',
+             'segments_container',
+             'rules_container',
+             'selection_container',
+             'container_toggler'].forEach(function(elem) {
+                 elems[elem] = document.querySelector('.' + elem);
+            });
+            
+            // Features and Segments scroller:
+            // synchronize scrolling both elements, and fix the segments header when scrolled down
+            // use requestAnimationFrame instead of a scroll handler to avoid jank
+            var request_scroll_update = false;
+            var scroll_update = function() {
+                if(!request_scroll_update) { return requestAnimationFrame(scroll_update); }
                 
-                if(top !== siblingTop) {
-                    console.log(top, 'not', siblingTop);
-                    sibling.scrollTop(top);
+                var f_top = elems.features_container.scrollTop,
+                    f_left = elems.features_container.scrollLeft,
+                    s_top = elems.segments_container.scrollTop,
+                    s_left = elems.segments_container.scrollLeft;
+                
+                // synchronize scrolling
+                //console.log(request_scroll_update);
+                if(request_scroll_update == 'features_container') {
+                    elems.segments_container.scrollTop = f_top;
+                } else {
+                    elems.features_container.scrollTop = s_top;
                 }
                 
-                if(self.hasClass('segments_container')) {
-                    var header = self.find('tr:first-child'),
-                        is_sticky = header.get(0).classList.contains('sticky');
-                    
-                    if(top !== $('.features_container').scrollTop()) {
-                        $('.features_container').scrollTop(top);
-                        console.log('scrolling to top B', top);
-                    }
-                    
-                    if(top > header.offset().top + header.height()) {
-                        if(!is_sticky) {
-                            header.addClass('sticky');
-                            header.parents('table').css('margin-top', header.height() + 8);
-                        }
-                        if(left) {
-                            header.css('margin-left', -1*left);
-                        }
-                    } else if(is_sticky) {
+                // set or unset sticky header
+                var header = $('.segments_container tr:first-child'),
+                    is_sticky = header.hasClass('sticky');
+                if(is_sticky) {
+                    header.css('margin-left', (-1 * s_left) - 2);
+                    if(s_top < header.height() * 1.5) {
                         header.removeClass('sticky');
                         header.parents('table').css('margin-top', 0);
                     }
+                } else {
+                    if(header.offset().top < 0) {
+                        header.addClass('sticky');
+                        header.parents('table').css('margin-top', header.height() + 24);
+                    }
+                }
+                
+                request_scroll_update = false;
+                requestAnimationFrame(scroll_update);
+            }
+            requestAnimationFrame(scroll_update);
+            $('.features_segments_container > div').bind('scroll', function() {
+                if(!request_scroll_update) {
+                    request_scroll_update = $(this).attr('class');
                 }
             });
 		</script>
