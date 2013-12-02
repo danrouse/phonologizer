@@ -3,8 +3,8 @@ html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abb
 *{box-sizing: border-box;}
 @import url(https://fonts.googleapis.com/css?family=Andika&subset=latin,latin-ext);
 
-$primary-color: rgb(120, 189, 160);
-$secondary-color: rgb(25, 72, 45);
+$primary-color: hsl(189, 58%, 73%);
+$secondary-color: hsl(208, 79%, 14%);
 
 html { 
 	-webkit-user-select: none;
@@ -38,11 +38,33 @@ body > div {
 
 ul.features {
     display: inline-block;
+    position: relative;
+    padding: 0 .5em;
+    
     li:first-child:before {
-        content: '[';
+        content: ' ';
+        position: absolute;
+        left: 0;
+        top: -.1em;
+        //background: pink;
+        height: 100%;
+        width: .25em;
+        border: .1em solid $secondary-color;
+        border-right: 0;
     }
     li:last-child:after {
-        content: ']';
+        content: ' ';
+        position: absolute;
+        right: 0;
+        top: -.1em;
+        //background: pink;
+        height: 100%;
+        width: .25em;
+        border: .1em solid $secondary-color;
+        border-left: 0;
+    }
+    li:first-letter {
+        margin-right: .25em;
     }
     li {
         list-style: none;
@@ -213,6 +235,8 @@ ul.features {
             button {
                 margin: .25em auto;
                 display: block;
+                border-radius: 2em;
+                font-weight: bold;
             }
         }
         .rule_target, .rule_transform {
@@ -227,16 +251,23 @@ ul.features {
     padding: 1em;
     
     background: lighten($primary-color, 10%);
+    border-top: .2em solid $primary-color;
     ul.segments li {
         display: inline-block;
         list-style: none;
         width: 1.5em; height: 1.5em;
     }
-    > h3, > ul, > p {
+    .selection {
         display: inline-block;
-        margin: 0 1em 1em 0;
         vertical-align: top;
-        max-width: 24%;
+        white-space: nowrap;
+        > h3, > p, > ul {
+            white-space: normal;
+            display: inline-block;
+            vertical-align: top;
+            margin-right: 1em;
+            max-width: 50%;
+        }
     }
 }
 
@@ -278,10 +309,17 @@ ul.features {
         right: 0;
         top: 0;
         height: 100%;
-        > h3, > ul, > p {
+        border-left: .2em solid $primary-color;
+        border-top: 0;
+        .selection {
             display: block;
             margin-bottom: 0 0 2em 0;
             max-width: none;
+            > h3, > p, > ul {
+                display: block;
+                width: 100%;
+                max-width: none;
+            }
         }
     }
 
@@ -297,7 +335,7 @@ ul.features {
 }
 */
 
-/*
+
 div.ime_suggest {
     height: 9em;
     max-width: 100%;
@@ -333,7 +371,7 @@ div.ime_suggest {
             font-style: italic;
         }
         button.ime_selected { background: rgba(150,150,150,.95); }
-
+/*
 .rules {
     font-size: 120%;
 	border: 0;

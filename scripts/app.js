@@ -492,10 +492,10 @@
             cur_row = [];
             var buttons = '';
             if(i != 0) {
-                buttons += '<li><button data-action="rule_up" data-i="' + i + '">up</button></li>';
+                buttons += '<li><button data-action="rule_up" data-i="' + i + '">&uArr;</button></li>';
             }
             if(i != rules.length - 1) {
-                buttons += '<li><button data-action="rule_down" data-i="' + i + '">down</button></li>';
+                buttons += '<li><button data-action="rule_down" data-i="' + i + '">&dArr;</button></li>';
             }
             cur_row.push('<td class="rule" data-i="' + i + '"><ul class="rule_move_buttons">' + buttons + '</ul>\
                 <input class="rule_name ipa" type="text" value="' + rules[i].name + '" placeholder="new rule">\
@@ -528,7 +528,7 @@
         
         elems.rules_container.html('<h3>Rules</h3><table class="rules">' + new_table.join('') + '</table>');
 		
-        //$('.rules_container .ipa').ipa_ime();
+        $('.rules_container .ipa').ipa_ime();
     }
     
     elems.rules_container.bind('change', 'input', function(event) {
@@ -678,19 +678,18 @@
             selection = [selection];
         }
         
-        var html = [];
+        var items = [];
         
         for(var item in selection) {
             //console.log('sel it', selection, item, selection[item]);
             if(index.segments[selection[item]]) {
                 // segment selected
-                html.push('<h3>Segment: ' + selection[item] + '</h3>');
-                
                 var features = features_to_string(index.segments[selection[item]], true);
-                html.push(features);
+                items.push('<h3>Segment: ' + selection[item] + '</h3>' + features);
             } else {
                 // query the feature bundle
-                var matched_segments = [];
+                var matched_segments = [],
+                    html = [];
                 for(var segment in index.segments) {
                     var comp = compare_features(selection[item], index.segments[segment]);
                     if(comp.diff.length === 0) {
@@ -703,10 +702,11 @@
                 } else {
                     html.push('<p>No segments found</p>');
                 }
+                items.push(html.join(''));
             }
         }
         
-        $('.selection_container').html(html.join(''));
+        $('.selection_container').html('<div class="selection">' + items.join('</div><div class="selection">') + '</div>');
 	}
     
     // Default data and rules
